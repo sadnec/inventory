@@ -1,0 +1,1 @@
+ C:\\Users\\Awala\ Clotilde\\Desktop\\projects\\inventory-tracker\\inventory-tracker\\.dart_tool\\flutter_build\\f4f31635405f9f5317a15e8f4b610926\\native_assets.yaml: 

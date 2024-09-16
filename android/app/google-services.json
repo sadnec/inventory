@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "336010207341",
+    "project_id": "inventorytracker-a25bd",
+    "storage_bucket": "inventorytracker-a25bd.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:336010207341:android:8415a9a01dcaab887a1f64",
+        "android_client_info": {
+          "package_name": "com.example.inventorytracker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAu8iURE2pMWgWUjBdsWo2RivpL009bmFU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
