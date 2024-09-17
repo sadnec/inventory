@@ -42,6 +42,10 @@ dependencies:
   cloud_firestore: ^5.4.1
   pdf: ^3.7.0
   pdf_image_renderer: ^0.7.0
+  flutter_pdfview: ^1.3.2
+  url_launcher: ^6.3.0
+  open_file: ^3.5.3
+  permission_handler: ^11.3.1
   
 
 dev_dependencies:
@@ -72,7 +76,7 @@ flutter:
   assets:
     - assets/images/logo.png
     - assets/produit.csv
-    - assets/fonts/DejaVuSans.ttf
+    - assets/fonts/Roboto-Regular.ttf
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
