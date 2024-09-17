@@ -1,6 +1,8 @@
+import 'dart:developer'; // Import the developer package
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:csv/csv.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Firebase Firestore package
 
 class AddInventory extends StatefulWidget {
   const AddInventory({super.key});
@@ -13,6 +15,9 @@ class _AddInventoryState extends State<AddInventory> {
   // List to store the quantity for each product
   late List<TextEditingController> quantityControllers;
   late List<String> productNames;
+
+  // Instance of Database class to interact with Firestore
+  final Database _database = Database();
 
   @override
   void initState() {
@@ -35,12 +40,12 @@ class _AddInventoryState extends State<AddInventory> {
   Future<List<String>> loadColumnFromCSV() async {
     try {
       final rawData = await rootBundle.loadString('assets/produit.csv');
-      print("Raw Data: $rawData"); // Debug log
+      print("Raw Data: $rawData");
 
       // Parse CSV
       final List<List<dynamic>> csvTable =
-          CsvToListConverter().convert(rawData, eol: '\n', fieldDelimiter: ',');
-      print("Parsed Data: $csvTable"); // Debug log
+      CsvToListConverter().convert(rawData, eol: '\n', fieldDelimiter: ',');
+      print("Parsed Data: $csvTable");
 
       // Skip the header rows
       int headerRows = 6; // Number of header rows to skip
@@ -66,20 +71,20 @@ class _AddInventoryState extends State<AddInventory> {
             quantityControllers.add(TextEditingController());
           }
         } else {
-          print("Row does not contain enough columns: $row"); // Debug log
+          print("Row does not contain enough columns: $row");
         }
       }
 
-      print("Filtered Column Data: $columnData"); // Debug log
+      print("Filtered Column Data: $columnData");
       return columnData;
     } catch (e) {
-      print("Error loading CSV: $e"); // Debug log
+      print("Error loading CSV: $e");
       return [];
     }
   }
 
-  // Function to handle form submission
-  void _submitInventory() {
+  // Function to handle form submission and add inventory to Firestore
+  Future<void> _submitInventory() async {
     List<Map<String, dynamic>> inventory = [];
     for (int i = 0; i < productNames.length; i++) {
       String productName = productNames[i];
@@ -90,10 +95,12 @@ class _AddInventoryState extends State<AddInventory> {
         'product': productName,
         'quantity': quantity,
       });
+
+      // Add each product to Firestore using the Database class
+      await _database.create(productName, quantity);
     }
 
-    // Process the inventory list (e.g., send to server or store locally)
-    print("Submitted Inventory: $inventory"); // Debug log
+    print("Submitted Inventory: $inventory");
 
     // Show a confirmation message
     showDialog(
@@ -141,7 +148,7 @@ class _AddInventoryState extends State<AddInventory> {
                         padding: const EdgeInsets.all(16.0),
                         child: DataTable(
                           headingRowColor: MaterialStateColor.resolveWith(
-                              (states) => Color(0xFF93C852)), // Primary color
+                                  (states) => Color(0xFF93C852)), // Primary color
                           columnSpacing: 20.0, // Space between columns
                           columns: [
                             DataColumn(
@@ -159,7 +166,7 @@ class _AddInventoryState extends State<AddInventory> {
                           ],
                           rows: List<DataRow>.generate(
                             columnData.length,
-                            (index) => DataRow(
+                                (index) => DataRow(
                               cells: [
                                 DataCell(
                                   Container(
@@ -170,6 +177,8 @@ class _AddInventoryState extends State<AddInventory> {
                                     alignment: Alignment.centerLeft,
                                     child: Text(
                                       '${index + 1}. ${columnData[index]}',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold),
                                     ),
                                   ),
                                 ),
@@ -187,6 +196,8 @@ class _AddInventoryState extends State<AddInventory> {
                                       decoration: InputDecoration(
                                         border: InputBorder.none,
                                         hintText: 'Qty',
+                                        hintStyle: TextStyle(
+                                            fontWeight: FontWeight.bold),
                                       ),
                                     ),
                                   ),
@@ -206,9 +217,9 @@ class _AddInventoryState extends State<AddInventory> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Color(0xFF93C852), // Primary color
                       padding:
-                          EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                       textStyle:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     child: Text('Submit Inventory'),
                   ),
@@ -219,5 +230,21 @@ class _AddInventoryState extends State<AddInventory> {
         },
       ),
     );
+  }
+}
+
+class Database {
+  final _fire = FirebaseFirestore.instance;
+
+  // Method to add a product and its quantity to Firestore
+  Future<void> create(String productName, int quantity) async {
+    try {
+      await _fire.collection("inventory").add({
+        "product": productName,
+        "quantity": quantity,
+      });
+    } catch (e) {
+      log(e.toString()); // Log any errors
+    }
   }
 }

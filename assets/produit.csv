@@ -2,7 +2,7 @@
 ,,,,,
 ,UVC = Unité de Vente Consommateur : le produit qui est vendu au consommateur final,,,,
 ,,,,Tarifs ,
-CODES BARRES,DESIGNATION= Nom du produit,Nombre UVC par colis,Poids/Litrage / de l'UVC,Prix (FCFA) LIVRE MAGASIN,Prix de vente  (FCFA) 
+CODES BARRES,DESIGNATION= Nom du produit,Nombre UVC par colis,Poids/Litrage / de l'UVC,Prix (FCFA) LIVRE MAGASIN,Prix de vente  (FCFA)
 ,GAMME MANYANGA,,,,
 3770008976146,MANYANGA 100% PUR BLANC,24,250ml,1200,"1,800"
 3770008976153,250ML MANYANGA CITRON,24,250ml,1500,"2,000"
