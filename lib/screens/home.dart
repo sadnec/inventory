@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:inventorytracker/screens/addinventory.dart';
+import 'package:inventorytracker/screens/allinventories.dart';
 
 class Home extends StatelessWidget {
   const Home({super.key});
@@ -75,7 +76,12 @@ class Home extends StatelessWidget {
                 ),
                 child: ElevatedButton(
                   onPressed: () {
-                    // Navigate to See All Inventories page or handle the action
+                    // Navigate to AddInventory page
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const AllInventories()),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent,
