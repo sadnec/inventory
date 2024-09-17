@@ -36,52 +36,60 @@ class _AddInventoryState extends State<AddInventory> {
     super.dispose();
   }
 
-  // Function to load and parse the CSV file from assets
   Future<List<String>> loadColumnFromCSV() async {
     try {
+      // Load the CSV data from assets
       final rawData = await rootBundle.loadString('assets/produit.csv');
+
       print("Raw Data: $rawData");
 
-      // Parse CSV
-      final List<List<dynamic>> csvTable =
-      CsvToListConverter().convert(rawData, eol: '\n', fieldDelimiter: ',');
+      // Parse the CSV file using CsvToListConverter with proper configuration
+      final List<List<dynamic>> csvTable = const CsvToListConverter(
+        eol: '\r\n',
+        fieldDelimiter: ',',
+        textDelimiter: '"', // Handle commas within quotes
+        shouldParseNumbers: false, // Disable automatic number parsing
+      ).convert(rawData);
+
       print("Parsed Data: $csvTable");
 
-      // Skip the header rows
-      int headerRows = 6; // Number of header rows to skip
-      if (csvTable.length <= headerRows) {
-        print("Not enough data to skip the header rows.");
-        return [];
-      }
-
-      // Extract data rows
-      final List<List<dynamic>> dataRows = csvTable.skip(headerRows).toList();
-
-      // Specify the second column (index 1) you want to extract
-      int columnIndex = 1; // Second column
+      // Initialize an empty list to store valid rows
       List<String> columnData = [];
-      for (var row in dataRows) {
-        if (row.length > columnIndex) {
-          String productName = row[columnIndex].toString();
-          // Filter out rows that contain the word "gamme"
-          if (!productName.toLowerCase().contains('gamme')) {
-            columnData.add(productName);
-            productNames.add(productName); // Save product names
-            // Initialize a controller for each product
-            quantityControllers.add(TextEditingController());
+
+      // Filter and process the rows
+      for (var row in csvTable) {
+        print("Row: $row");
+
+        // Check if the row is not empty and has more than 1 column
+        if (row.isNotEmpty && row.length > 1) {
+          String productName = row[1].toString().trim(); // Get the product name from the second column
+
+          // Skip rows containing "GAMME" or rows that are just headers
+          if (!productName.toLowerCase().contains('gamme') && productName.isNotEmpty && !productName.contains('=')) {
+            // Ensure there are enough columns for sale price (at least 6 columns)
+            if (row.length > 5) {
+              String salePriceString = row[5].toString().replaceAll(RegExp(r'[^\d]'), ''); // Remove non-numeric characters
+              int? salePrice = int.tryParse(salePriceString); // Try to convert to integer
+
+              print('Product: $productName, Sale Price: $salePrice');
+            }
+
+            columnData.add(productName); // Add valid product names to the list
+            productNames.add(productName); // Add the product to your global list
+            quantityControllers.add(TextEditingController()); // Initialize controller for each product
           }
-        } else {
-          print("Row does not contain enough columns: $row");
         }
       }
 
       print("Filtered Column Data: $columnData");
-      return columnData;
+      return columnData; // Return the list of product names
     } catch (e) {
       print("Error loading CSV: $e");
       return [];
     }
   }
+
+
 
   // Function to handle form submission and add inventory to Firestore
   Future<void> _submitInventory() async {
@@ -140,8 +148,6 @@ class _AddInventoryState extends State<AddInventory> {
             return Column(
               children: [
                 Expanded(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
                     child: SingleChildScrollView(
                       scrollDirection: Axis.vertical,
                       child: Padding(
@@ -178,7 +184,8 @@ class _AddInventoryState extends State<AddInventory> {
                                     child: Text(
                                       '${index + 1}. ${columnData[index]}',
                                       style: TextStyle(
-                                          fontWeight: FontWeight.bold),
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12.0),
                                     ),
                                   ),
                                 ),
@@ -195,7 +202,7 @@ class _AddInventoryState extends State<AddInventory> {
                                       textAlign: TextAlign.center,
                                       decoration: InputDecoration(
                                         border: InputBorder.none,
-                                        hintText: 'Qty',
+                                        hintText: '',
                                         hintStyle: TextStyle(
                                             fontWeight: FontWeight.bold),
                                       ),
@@ -207,7 +214,6 @@ class _AddInventoryState extends State<AddInventory> {
                           ),
                         ),
                       ),
-                    ),
                   ),
                 ),
                 Padding(
