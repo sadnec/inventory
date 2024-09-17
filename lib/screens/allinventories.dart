@@ -2,6 +2,7 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:inventorytracker/screens/inventory_details.dart';
 
 class AllInventories extends StatefulWidget {
   const AllInventories({super.key});
@@ -65,10 +66,18 @@ class _AllInventoriesState extends State<AllInventories> {
                 final inventory = inventories[index];
                 final dateStr = inventory['date'] as String;
                 final date = DateTime.parse(dateStr);
-                final formattedDate = "${date.day}/${date.month}/${date.year}";
+                final formattedDate = "${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute}:${date.second}";
 
                 return ListTile(
                   title: Text('Inventory No ${index + 1} - $formattedDate'),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => InventoryDetails(date: dateStr),
+                      ),
+                    );
+                  },
                 );
               },
             );
