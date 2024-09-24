@@ -45,7 +45,7 @@ class _AddInventoryState extends State<AddInventory> {
 
       // Parse the CSV file using CsvToListConverter with proper configuration
       final List<List<dynamic>> csvTable = const CsvToListConverter(
-        eol: '\r\n',
+        eol: '\n',
         fieldDelimiter: ',',
         textDelimiter: '"', // Handle commas within quotes
         shouldParseNumbers: false, // Disable automatic number parsing
@@ -62,13 +62,19 @@ class _AddInventoryState extends State<AddInventory> {
 
         // Check if the row is not empty and has more than 1 column
         if (row.isNotEmpty && row.length > 1) {
-          String productName = row[1].toString().trim(); // Get the product name from the second column
+          String productName = row[1]
+              .toString()
+              .trim(); // Get the product name from the second column
 
           // Skip rows containing "GAMME" or rows that are just headers
-          if (!productName.toLowerCase().contains('gamme') && productName.isNotEmpty && !productName.contains('=')) {
+          if (!productName.toLowerCase().contains('gamme') &&
+              productName.isNotEmpty &&
+              !productName.contains('=')) {
             columnData.add(productName); // Add valid product names to the list
-            productNames.add(productName); // Add the product to your global list
-            quantityControllers.add(TextEditingController()); // Initialize controller for each product
+            productNames
+                .add(productName); // Add the product to your global list
+            quantityControllers.add(
+                TextEditingController()); // Initialize controller for each product
           }
         }
       }
@@ -83,13 +89,14 @@ class _AddInventoryState extends State<AddInventory> {
 
   // Function to handle form submission and add inventory to Firestore
   Future<void> _submitInventory() async {
-    String currentDate = DateTime.now().toIso8601String(); // Get the current date
+    String currentDate =
+        DateTime.now().toIso8601String(); // Get the current date
 
     List<Map<String, dynamic>> inventory = [];
     for (int i = 0; i < productNames.length; i++) {
       String productName = productNames[i];
       String? quantityText = quantityControllers[i].text;
-      int quantity = int.tryParse(quantityText ?? '') ?? 0;
+      int quantity = int.tryParse(quantityText) ?? 0;
 
       inventory.add({
         'product': productName,
@@ -146,7 +153,7 @@ class _AddInventoryState extends State<AddInventory> {
                       padding: const EdgeInsets.all(16.0),
                       child: DataTable(
                         headingRowColor: MaterialStateColor.resolveWith(
-                                (states) => Color(0xFF93C852)), // Primary color
+                            (states) => Color(0xFF93C852)), // Primary color
                         columnSpacing: 20.0, // Space between columns
                         columns: [
                           DataColumn(
@@ -164,7 +171,7 @@ class _AddInventoryState extends State<AddInventory> {
                         ],
                         rows: List<DataRow>.generate(
                           columnData.length,
-                              (index) => DataRow(
+                          (index) => DataRow(
                             cells: [
                               DataCell(
                                 Container(
@@ -212,9 +219,9 @@ class _AddInventoryState extends State<AddInventory> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Color(0xFF93C852), // Primary color
                       padding:
-                      EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                          EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                       textStyle:
-                      TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     child: Text('Submit Inventory'),
                   ),
@@ -227,7 +234,6 @@ class _AddInventoryState extends State<AddInventory> {
     );
   }
 }
-
 
 class Database {
   final _fire = FirebaseFirestore.instance;

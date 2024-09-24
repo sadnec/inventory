@@ -5,7 +5,6 @@ import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
-import 'package:url_launcher/url_launcher.dart'; // Import url_launcher
 import 'package:open_file/open_file.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -17,37 +16,28 @@ class InventoryDetails extends StatelessWidget {
   Future<void> _requestPermissions(BuildContext context) async {
     if (Platform.isAndroid) {
       if (await Permission.storage.request().isGranted) {
-        // Permission granted for older Android versions
         print("Storage permission granted.");
       } else if (await Permission.storage.isPermanentlyDenied) {
-        // If the permission is permanently denied, direct the user to settings
         print("Storage permission permanently denied.");
         openAppSettings();
       } else {
-        // Permission is denied
         print("Storage permission denied.");
         _showPermissionDeniedDialog(context);
       }
 
-      // For Android 11+ (API level 30), we need to check for MANAGE_EXTERNAL_STORAGE
       if (await Permission.manageExternalStorage.request().isGranted) {
-        // Manage External Storage permission granted
         print("Manage External Storage permission granted.");
       } else if (await Permission.manageExternalStorage.isPermanentlyDenied) {
-        // If the permission is permanently denied, direct the user to settings
         print("Manage External Storage permission permanently denied.");
         openAppSettings();
       } else {
-        // Permission is denied
         print("Manage External Storage permission denied.");
         _showPermissionDeniedDialog(context);
       }
     } else {
-      // iOS does not require these permissions
-      print("Permissions are not required on iOS.");
+      print("Permissions not required on iOS.");
     }
   }
-
 
   Future<void> _showPermissionDeniedDialog(BuildContext context) async {
     return showDialog<void>(
@@ -55,11 +45,12 @@ class InventoryDetails extends StatelessWidget {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Permission Denied'),
-          content: Text('Storage permission is required to save and open PDF files.'),
+          title: const Text('Permission Denied'),
+          content: const Text(
+              'Storage permission is required to save and open PDF files.'),
           actions: <Widget>[
             TextButton(
-              child: Text('OK'),
+              child: const Text('OK'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -70,56 +61,101 @@ class InventoryDetails extends StatelessWidget {
     );
   }
 
-
-
   Future<void> _exportToPdf(BuildContext context, List<dynamic> items) async {
-    // Print items to debug
     await _requestPermissions(context);
 
     try {
-      final pdf = pw.Document();
+      // Filter out items with zero quantity
+      final filteredItems = items.where((item) {
+        return (item['quantity'] is int && item['quantity'] > 0) ||
+            (int.tryParse(item['quantity'].toString()) ?? 0) > 0;
+      }).toList();
 
-      // Add a page to the PDF
+      if (filteredItems.isEmpty) {
+        print("No items with quantity greater than zero to export.");
+        // Show a message to the user (optional)
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content:
+                Text('No items with quantity greater than zero to export.'),
+          ),
+        );
+        return; // Exit if no valid items are present
+      }
+
+      final pdf = pw.Document();
+      // Calculate the total quantity
+      int totalQuantity = filteredItems.fold(0, (sum, item) {
+        int quantity = (item['quantity'] is int)
+            ? item['quantity']
+            : int.tryParse(item['quantity'].toString()) ?? 0;
+        return sum + quantity;
+      });
+
       pdf.addPage(
         pw.Page(
           build: (pw.Context context) {
             return pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                pw.Text('Inventory Details', style: pw.TextStyle(fontSize: 24)),
+                // Title
+                pw.Text('Inventory Details',
+                    style: pw.TextStyle(
+                        fontSize: 24, fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 10),
+
+                // Date Information
+                pw.Text('Date: $date', style: pw.TextStyle(fontSize: 16)),
+                pw.SizedBox(height: 10),
+
+                // Total Quantity Information
+                pw.Text('Total Quantity: $totalQuantity',
+                    style: pw.TextStyle(fontSize: 16)),
                 pw.SizedBox(height: 20),
+
+                // Table for Inventory Items
                 pw.Table(
                   border: pw.TableBorder.all(width: 1, color: PdfColors.black),
                   columnWidths: {
-                    0: pw.FlexColumnWidth(2),
-                    1: pw.FlexColumnWidth(1),
+                    0: pw.FlexColumnWidth(2), // Product column width
+                    1: pw.FlexColumnWidth(1), // Quantity column width
                   },
                   children: [
+                    // Table Header
                     pw.TableRow(
                       decoration: pw.BoxDecoration(
                         color: PdfColors.grey300,
                       ),
                       children: [
                         pw.Padding(
-                          padding: pw.EdgeInsets.all(8),
-                          child: pw.Text('Product', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text('Product',
+                              style:
+                                  pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                         ),
                         pw.Padding(
-                          padding: pw.EdgeInsets.all(8),
-                          child: pw.Text('Quantity', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text('Quantity',
+                              style:
+                                  pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                         ),
                       ],
                     ),
-                    ...items.map((item) {
+                    // Table Rows for Each Item
+                    ...filteredItems.map((item) {
                       return pw.TableRow(
                         children: [
                           pw.Padding(
-                            padding: pw.EdgeInsets.all(8),
+                            padding: const pw.EdgeInsets.all(8),
                             child: pw.Text(item['product'] ?? 'N/A'),
                           ),
                           pw.Padding(
-                            padding: pw.EdgeInsets.all(8),
-                            child: pw.Text(item['quantity']?.toString() ?? '0'),
+                            padding: const pw.EdgeInsets.all(8),
+                            child: pw.Text(
+                              (item['quantity'] is int)
+                                  ? item['quantity'].toString()
+                                  : '0',
+                            ),
                           ),
                         ],
                       );
@@ -132,35 +168,16 @@ class InventoryDetails extends StatelessWidget {
         ),
       );
 
+      // Save the PDF and open it
       final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/inventory_${DateTime.now().toIso8601String().replaceAll(':', '-')}.pdf');
+      final file = File(
+          '${directory.path}/inventory_${DateTime.now().toIso8601String().replaceAll(':', '-')}.pdf');
       await file.writeAsBytes(await pdf.save());
 
       // Open the PDF file with an external app
-      final result = await OpenFile.open(file.path);
-      // if (result.message != null && result.message!.isNotEmpty) {
-      //   // Optionally show an error message if the file cannot be opened
-      //   showDialog(
-      //     context: context,
-      //     builder: (BuildContext context) {
-      //       return AlertDialog(
-      //         title: Text('Error'),
-      //         content: Text('Unable to open the PDF file: ${result.message}'),
-      //         actions: [
-      //           TextButton(
-      //             child: Text('OK'),
-      //             onPressed: () {
-      //               Navigator.of(context).pop();
-      //             },
-      //           ),
-      //         ],
-      //       );
-      //     },
-      //   );
-      // }
+      await OpenFile.open(file.path);
     } catch (e) {
       print('Error generating PDF: $e');
-      // Optionally show an error message to the user
     }
   }
 
@@ -168,17 +185,21 @@ class InventoryDetails extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Inventory Details'),
+        title: const Text('Inventory Details'),
+        backgroundColor: const Color(0xFF93C852),
       ),
       body: FutureBuilder<DocumentSnapshot>(
-        future: FirebaseFirestore.instance.collection("inventories").doc(date).get(),
+        future: FirebaseFirestore.instance
+            .collection("inventories")
+            .doc(date)
+            .get(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (!snapshot.hasData || !snapshot.data!.exists) {
-            return Center(child: Text('No details found.'));
+            return const Center(child: Text('No details found.'));
           } else {
             final data = snapshot.data!.data() as Map<String, dynamic>;
             final items = data['items'] as List<dynamic>;
@@ -186,18 +207,32 @@ class InventoryDetails extends StatelessWidget {
             return Column(
               children: [
                 Expanded(
-                  child: ListView.builder(
-                    itemCount: items.length,
-                    itemBuilder: (context, index) {
-                      final item = items[index] as Map<String, dynamic>;
-                      final product = item['product'];
-                      final quantity = item['quantity'];
-
-                      return ListTile(
-                        title: Text('$product'),
-                        subtitle: Text('Quantity: $quantity'),
-                      );
-                    },
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16.0),
+                    child: DataTable(
+                      columns: const [
+                        DataColumn(
+                          label: Text(
+                            'Product',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        DataColumn(
+                          label: Text(
+                            'Quantity',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                      rows: items.map<DataRow>((item) {
+                        return DataRow(
+                          cells: [
+                            DataCell(Text(item['product'] ?? 'N/A')),
+                            DataCell(Text(item['quantity']?.toString() ?? '0')),
+                          ],
+                        );
+                      }).toList(),
+                    ),
                   ),
                 ),
                 Padding(
@@ -207,11 +242,13 @@ class InventoryDetails extends StatelessWidget {
                       await _exportToPdf(context, items);
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue, // Customize as needed
-                      padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                      textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      backgroundColor: const Color(0xFF93C852),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 32, vertical: 16),
+                      textStyle: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold),
                     ),
-                    child: Text('Export to PDF'),
+                    child: const Text('Export to PDF'),
                   ),
                 ),
               ],
@@ -232,7 +269,8 @@ class PDFViewPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('PDF Viewer'),
+        title: const Text('PDF Viewer'),
+        backgroundColor: const Color(0xFF93C852),
       ),
       body: PDFView(
         filePath: filePath,

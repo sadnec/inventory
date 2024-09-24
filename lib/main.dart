@@ -1,7 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:inventorytracker/screens/home.dart';
-import 'package:inventorytracker/screens/login.dart';
 import 'package:inventorytracker/screens/splash.dart';
 
 void main() async {
